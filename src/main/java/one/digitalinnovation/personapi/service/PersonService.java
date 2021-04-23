@@ -49,11 +49,11 @@ public class PersonService {
     public MessageResponseDTO editPerson(Long id, PersonDTO personDTO) {
         String message;
         if (verifyIfExists(id)) {
-            message = "Person with ID " + personDTO.getId() + " do not exists";
-        } else {
             Person personToEdit = personMapper.toModel(personDTO);
             personRepository.save(personToEdit);
             message = "Modified Person with ID: " + personDTO.getId();
+        } else {
+            message = "Person with ID " + personDTO.getId() + " do not exists";
         }
         return responseMessageDTO(message);
     }
