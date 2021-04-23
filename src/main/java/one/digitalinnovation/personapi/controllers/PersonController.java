@@ -38,9 +38,9 @@ public class PersonController {
         return personService.createPerson(personDTO);
     }
 
-    @PutMapping("/person")
-    public MessageResponseDTO editPerson(@RequestBody @Valid PersonDTO personDTO) {
-        return personService.editPerson(personDTO);
+    @PutMapping("/{id}")
+    public MessageResponseDTO editPerson(@PathVariable Long id, @RequestBody PersonDTO personDTO) {
+        return personService.editPerson(id, personDTO);
     }
 
     @DeleteMapping("/{id}")

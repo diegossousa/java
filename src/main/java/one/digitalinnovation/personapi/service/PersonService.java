@@ -46,9 +46,9 @@ public class PersonService {
         return responseMessageDTO(message);
     }
 
-    public MessageResponseDTO editPerson(PersonDTO personDTO) {
+    public MessageResponseDTO editPerson(Long id, PersonDTO personDTO) {
         String message;
-        if (verifyIfExists(personDTO.getId())) {
+        if (verifyIfExists(id)) {
             message = "Person with ID " + personDTO.getId() + " do not exists";
         } else {
             Person personToEdit = personMapper.toModel(personDTO);
