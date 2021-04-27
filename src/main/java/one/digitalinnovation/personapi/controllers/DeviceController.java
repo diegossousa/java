@@ -39,12 +39,12 @@ public class DeviceController {
         return deviceService.createDevice(deviceDTO);
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/device/{id}")
     public MessageResponseDTO editDevice(@PathVariable Long id, @RequestBody DeviceDTO deviceDTO) {
         return deviceService.editDevice(id, deviceDTO);
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/device/{id}")
     public MessageResponseDTO deleteDeviceById(@PathVariable Long id) {
         return deviceService.deleteDeviceById(id);
     }

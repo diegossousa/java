@@ -4,9 +4,10 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import one.digitalinnovation.personapi.enums.DeviceState;
 import one.digitalinnovation.personapi.enums.DeviceType;
 
-import javax.persistence.Enumerated;
+import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 
 @Data
@@ -23,7 +24,11 @@ public class DeviceDTO {
     @NotEmpty
     private String ip;
 
-    @Enumerated
+    @Valid
+    @NotEmpty
+    private DeviceState state;
+
+    @Valid
     @NotEmpty
     private DeviceType type;
 }
