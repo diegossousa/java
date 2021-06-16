@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import one.digitalinnovation.personapi.enums.DeviceState;
 import one.digitalinnovation.personapi.enums.DeviceType;
+import one.digitalinnovation.personapi.enums.FanSpeed;
 
 import javax.persistence.*;
 
@@ -29,4 +30,23 @@ public class Device {
 
     @Enumerated(value = EnumType.STRING)
     private DeviceType type;
+
+    @Enumerated(value = EnumType.ORDINAL)
+    private FanSpeed speed;
+
+    @Column()
+    private Float temperature;
+
+    @Column
+    private Float humidity;
+
+    public String toJson() {
+        return String.join(",",
+                "{'id'='" + id + "'",
+                "'name'='" + name + "'",
+                "'ip'='" + ip + "'",
+                "'state'='" + state + "'",
+                "'type'='" + type + "'",
+                "'speed'='" + speed + "'}");
+    }
 }
