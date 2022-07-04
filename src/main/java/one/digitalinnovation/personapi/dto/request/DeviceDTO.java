@@ -1,58 +1,60 @@
 package one.digitalinnovation.personapi.dto.request;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import one.digitalinnovation.personapi.enums.DeviceState;
 import one.digitalinnovation.personapi.enums.DeviceType;
 import one.digitalinnovation.personapi.enums.FanSpeed;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
+import java.io.Serializable;
 
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class DeviceDTO {
+public class DeviceDTO implements Serializable {
+    private static final long serialVersionUID = 15161516548416L;
 
     private Long id;
 
     @NotEmpty
-    private String name;
+    private String descricao;
 
     @NotEmpty
     private String ip;
 
-    @Valid
-    @NotEmpty
-    private DeviceState state;
+    private Boolean onLine;
 
     @Valid
     @NotEmpty
-    private DeviceType type;
+    private DeviceState luz;
 
     @Valid
-    private FanSpeed speed;
+    @NotEmpty
+    private DeviceType dispositivo;
 
     @Valid
-    private Float temperature;
+    private FanSpeed velocidade;
 
     @Valid
-    private Float humidity;
+    private Float temperatura;
+
+    @Valid
+    private Float humidade;
 
     @Override
     public String toString() {
-        return String.join("", "{",
-                "id=" + id,
-                ", name='" + name,
-                ", ip='" + ip,
-                ", state=" + state,
-                ", type=" + type,
-                ", speed=" + speed,
-                ", temperature=" + temperature,
-                ", humidity=" + humidity,
-                "}");
+        return "{" +
+                "id:" + id +
+                ", descricao:'" + descricao + '\'' +
+                ", ip:'" + ip + '\'' +
+                ", onLine:" + onLine +
+                ", luz:" + luz +
+                ", dispositivo:" + dispositivo +
+                ", velocidade:" + velocidade +
+                ", temperatura:" + temperatura +
+                ", humidade:" + humidade +
+                '}';
     }
 }

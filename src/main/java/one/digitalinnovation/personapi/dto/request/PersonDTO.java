@@ -16,23 +16,30 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class PersonDTO {
+  private Long id;
+  @NotEmpty
+  private String login;
 
-    private Long id;
+  @NotEmpty
+  private String password;
 
-    @NotEmpty
-    @Size(min = 2, max = 100)
-    private String firstName;
+  @NotEmpty
+  private String authorities;
 
-    @NotEmpty
-    @Size(min = 2, max = 100)
-    private String lastName;
+  @NotEmpty
+  @Size(min = 2, max = 100)
+  private String firstName;
 
-    @NotEmpty
-    private String cpf;
+  @NotEmpty
+  @Size(min = 2, max = 100)
+  private String lastName;
 
-    private String birthDate;
+  @NotEmpty
+  private String cpf;
 
-    @Valid
-    @NotEmpty
-    private List<Phone> phones;
+  private String birthDate;
+
+  @Valid
+  @NotEmpty
+  private List<Phone> phones;
 }

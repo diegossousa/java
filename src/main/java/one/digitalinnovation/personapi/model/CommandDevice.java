@@ -9,4 +9,5 @@ public class CommandDevice {
     private Long id;
     private DeviceState state;
     private FanSpeed fanSpeed;
+    private String cmd;
 }

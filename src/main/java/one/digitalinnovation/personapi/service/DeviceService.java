@@ -1,57 +1,45 @@
 package one.digitalinnovation.personapi.service;
 
 import com.google.gson.Gson;
+import lombok.RequiredArgsConstructor;
 import one.digitalinnovation.personapi.dto.request.DeviceDTO;
 import one.digitalinnovation.personapi.dto.response.MessageResponseDTO;
 import one.digitalinnovation.personapi.enums.DeviceType;
+import one.digitalinnovation.personapi.enums.FanSpeed;
+import one.digitalinnovation.personapi.exceptions.DeviceException;
 import one.digitalinnovation.personapi.exceptions.DeviceNotFoundException;
 import one.digitalinnovation.personapi.mapper.DeviceMapper;
 import one.digitalinnovation.personapi.model.CommandDevice;
 import one.digitalinnovation.personapi.model.Device;
 import one.digitalinnovation.personapi.repository.DeviceRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.InetSocketAddress;
-import java.nio.charset.StandardCharsets;
+import java.net.InetAddress;
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class DeviceService {
-
     private final DeviceRepository deviceRepository;
     private final DeviceMapper deviceMapper = DeviceMapper.INSTANCE;
-
-    @Autowired
-    public DeviceService(DeviceRepository deviceRepository) {
-        this.deviceRepository = deviceRepository;
-    }
+    private final JmsTemplate jmsTemplateTopic;
 
     public List<DeviceDTO> getAll() {
         List<Device> deviceList = deviceRepository.findAll();
-        return deviceList.stream()
-                .map(device -> {
-                    getDeviceTemperatureAndHumidity(device);
-                    return deviceMapper.toDTO(device);
-                })
+        return deviceList.stream().parallel()
+                .map(Device::toDTO)
                 .collect(Collectors.toList());
     }
 
-    public DeviceDTO getDeviceById(Long id) throws DeviceNotFoundException {
-        if (verifyIfExists(id)) {
-            final Device deviceFound = deviceRepository.findById(id).get();
-
-            getDeviceTemperatureAndHumidity(deviceFound);
-
-            return deviceMapper.toDTO(deviceFound);
-        } else {
-            throw new DeviceNotFoundException(id);
-        }
+    public DeviceDTO getDeviceById(Long id) throws Throwable {
+        return deviceRepository.findById(id).orElseThrow((Supplier<Throwable>) () -> new DeviceNotFoundException(id)).toDTO();
     }
 
     public MessageResponseDTO createDevice(DeviceDTO deviceDTO) {
@@ -62,6 +50,8 @@ public class DeviceService {
         Device savedDevice = deviceRepository.save(deviceMapper.toModel(deviceDTO));
 
         message = "Created Device with ID: " + savedDevice.getId();
+
+        jmsTemplateTopic.convertAndSend("topic.car", deviceDTO.toString());
 
         return responseMessageDTO(message);
     }
@@ -79,29 +69,49 @@ public class DeviceService {
     }
 
     public MessageResponseDTO deleteDeviceById(Long id) throws DeviceNotFoundException {
-        String message;
         if (verifyIfExists(id)) {
             deviceRepository.deleteById(id);
-            message = "Device with ID: " + id + " deleted";
-        } else {
-            message = "Device with ID " + id + " do not exists";
         }
-        return responseMessageDTO(message);
+        return responseMessageDTO("Device with ID: " + id + " deleted");
     }
 
     public MessageResponseDTO command(CommandDevice commandDevice) throws DeviceNotFoundException {
+
+        Assert.isTrue(commandDevice.getCmd().equals("luz") || commandDevice.getCmd().equals("ventilador"), "Comando não reconhecido");
 
         final Device device = deviceRepository
                 .findById(commandDevice.getId())
                 .orElseThrow(() -> new DeviceNotFoundException(commandDevice.getId()));
 
-        if (device.getType() == DeviceType.toys)
-            device.setSpeed(commandDevice.getFanSpeed());
-        device.setState(commandDevice.getState());
+        if (device.getType() == DeviceType.toys && commandDevice.getCmd().equals("ventilador")) {
+            if (commandDevice.getFanSpeed() != null) {
+                device.setSpeed(commandDevice.getFanSpeed());
+            } else {
+                device.setSpeed(FanSpeed.MIN);
+            }
+        }
 
-        deviceRepository.save(device);
+        if (send(device.getIp(), commandDevice.getCmd()).equals("OK")) {
+            setDeviceTemperatureHumidityStateAndSpeedToDevice(device);
+            return responseMessageDTO("Comando enviado com sucesso");
+        }
+        return responseMessageDTO("Comando não enviado");
+    }
 
-        return responseMessageDTO("Comando enviado com sucesso");
+    public void setDeviceTemperatureHumidityStateAndSpeedToDevice(Device device) {
+        try {
+            Device deviceInfo = getDeviceInfo(device);
+
+            device.setHumidity(deviceInfo.getHumidity());
+            device.setTemperature(deviceInfo.getTemperature());
+            device.setState(deviceInfo.getState());
+            device.setSpeed(deviceInfo.getSpeed());
+            device.setOnLine(deviceInfo.getOnLine());
+
+            deviceRepository.save(device);
+        } catch (DeviceException exception) {
+            exception.fillInStackTrace();
+        }
     }
 
     private MessageResponseDTO responseMessageDTO(String message) {
@@ -119,26 +129,36 @@ public class DeviceService {
         }
     }
 
-    private void getDeviceTemperatureAndHumidity(Device device) {
-        try {
-            byte[] data = new byte[39];
-            final Gson gson = new Gson();
+    private Device getDeviceInfo(Device device) throws DeviceException {
+        String deviceReturned = send(device.getIp(), "inf");
+        if (!deviceReturned.equals("timeOut")) {
+            Device auxDev = new Gson().fromJson(deviceReturned, Device.class);
+            auxDev.setOnLine(true);
+            return auxDev;
+        } else {
+            device.setOnLine(false);
+            return device;
+        }
+    }
 
-            final InetSocketAddress socket = new InetSocketAddress(device.getIp(), 8888);
-            final DatagramPacket datagramPacket = new DatagramPacket(data, 39, socket);
+    private String send(String ip, String message) {
+        try {
+            byte[] sendBuf = message.getBytes();
+            byte[] receiveBuf = new byte[128];
             final DatagramSocket datagramSocket = new DatagramSocket();
 
-            datagramSocket.send(datagramPacket);
-            datagramSocket.setSoTimeout(4000);
-            datagramSocket.receive(datagramPacket);
+            final DatagramPacket sendPacket = new DatagramPacket(sendBuf, sendBuf.length, InetAddress.getByName(ip), 8888);
+            final DatagramPacket receivePacket = new DatagramPacket(receiveBuf, receiveBuf.length);
 
-            final DeviceDTO deviceDTO = gson.fromJson(new String(data, StandardCharsets.UTF_8), DeviceDTO.class);
-
-            device.setHumidity(deviceDTO.getHumidity());
-            device.setTemperature(deviceDTO.getTemperature());
+            datagramSocket.setSoTimeout(2000);
+            datagramSocket.send(sendPacket);
+            datagramSocket.receive(receivePacket);
             datagramSocket.close();
+
+            return new String(receivePacket.getData(), 0, receivePacket.getLength());
+
         } catch (IOException exception) {
-            exception.fillInStackTrace();
+            return "timeOut";
         }
     }
 }

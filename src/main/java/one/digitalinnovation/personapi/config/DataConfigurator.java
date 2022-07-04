@@ -1,13 +1,28 @@
 package one.digitalinnovation.personapi.config;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.orm.jpa.JpaVendorAdapter;
 import org.springframework.orm.jpa.vendor.Database;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 
+import javax.sql.DataSource;
+
 @Configuration
 public class DataConfigurator {
+
+    @Value("${env.db.url}")
+    private String urlDB;
+    @Value("${env.db.username}")
+    private String username;
+    @Value("${env.db.password}")
+    private String password;
+    @Value("${env.db.driver}")
+    private String driver;
 
 //    @Bean
 //    public DataSource dataPostgreSource() throws URISyntaxException {
@@ -36,15 +51,16 @@ public class DataConfigurator {
 //        return adapter;
 //    }
 
-//    @Bean
-//    public DataSource getDataSource() {
-//        return DataSourceBuilder.create()
-//                .driverClassName("com.mysql.cj.jdbc.Driver")
-//                .password("82275813")
-//                .url("jdbc:mysql://localhost:3306/livraria?serverTimezone=UTC")
-//                .username("livraria")
-//                .build();
-//    }
+    @Bean
+    @Primary
+    public DataSource getDataSource() {
+        return DataSourceBuilder.create()
+                .driverClassName(driver)
+                .password(password)
+                .url(urlDB)
+                .username(username)
+                .build();
+    }
 
     @Bean
     public JpaVendorAdapter getVendorAdapter() {

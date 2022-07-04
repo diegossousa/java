@@ -12,9 +12,8 @@ import javax.validation.Valid;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/people")
+@RequestMapping("/person")
 public class PersonController {
-
     private final PersonService personService;
 
     @Autowired
@@ -32,7 +31,7 @@ public class PersonController {
         return personService.getPersonById(id);
     }
 
-    @PostMapping("/person")
+    @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public MessageResponseDTO createPerson(@RequestBody @Valid PersonDTO personDTO) {
         return personService.createPerson(personDTO);

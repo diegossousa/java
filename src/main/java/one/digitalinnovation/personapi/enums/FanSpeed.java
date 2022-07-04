@@ -1,15 +1,22 @@
 package one.digitalinnovation.personapi.enums;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 @Getter
-@AllArgsConstructor
 public enum FanSpeed {
-    ZERO(0),
-    UM(1),
-    DOIS(2),
-    TRES(3);
+    OFF(0),
+    MIN(1),
+    MID(2),
+    MAX(3),
+    ON(4);
 
     public int speed;
+
+    FanSpeed(int speed) {
+        this.speed = speed;
+    }
+
+    public static int getValue(String value){
+        return valueOf(value).getSpeed();
+    }
 }

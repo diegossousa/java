@@ -1,0 +1,2 @@
+INSERT INTO person (id, login, password, cpf, authorities, enabled, first_name, last_name) values ('1', 'admin', '$2a$10$ARR5sm/9OHByDdRulMk/qOGV3htk7x.IQo75OhMYCmYgqrYHTY7vC', '05844562712','ADIM', true, 'ADM', 'ADM');
+INSERT INTO device (id, name, ip, type) values ('1','Ventilador da Sala', '192.168.1.200', 'toys');
